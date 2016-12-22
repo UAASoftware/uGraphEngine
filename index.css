@@ -4,9 +4,16 @@ body {
 	margin: 0;
 }
 
+/* apply a natural box layout model to all elements */
+*, *:before, *:after {
+  -moz-box-sizing: border-box; -webkit-box-sizing: border-box; box-sizing: border-box;
+}
+
 body {
 	font-family: sans-serif;
-	background: #ffffff;
+	background: #EEEEEE;
+	background-image: url("white_carbonfiber.png");
+    background-repeat: repeat;
 }
 
 header {
@@ -41,10 +48,24 @@ button:active {
 	color: #0B6296;
 }
 
-div.container {
-	margin: 10px 30px;
-	padding: 12px 20px;
+button.add_segment {
+	margin: auto;
+	min-width: 250px;
+}
+
+div.super_container {
+    width: 1300px;
+	min-height: 800px;
+	margin: auto;
 	background: #ffffff;
+}
+
+div.container {
+	padding: 24px 20px;
+	background: #ffffff;
+	width: 33%;
+	min-width: 300px;
+	float: left;
 }
 
 div.container h1 {
@@ -52,10 +73,17 @@ div.container h1 {
 	padding: 0px;
 }
 
+div.container_graph {
+	float: left;
+	width: 65%;
+    margin: 0;
+    padding: 24px 0px;
+}
+
 input.ugraphcode {
 	font-family: 'Consolas', monospace;
 	width: 100%;
-	height: 20px;
+	height: 32px;
 	font-size: 14px;
 	padding: 4px;
 }
@@ -66,23 +94,103 @@ textarea.data_input {
 	margin: 0px 0px 5px 0px;
 	resize: vertical;
 	font-family: 'Consolas', monospace;
+	background: #eDeDeD;
+  	color: #000000;
+  	border: 1px;
+  	border-style: solid;
+  	border-color: #AfAfAf;
+}
+
+input {
+	background: #eDeDeD;
+  	color: #000000;
+  	border: 1px;
+  	border-style: solid;
+  	border-color: #AfAfAf;
+}
+
+input.segment {
+	padding: 3px;
 }
 
 div.segment_header {
-	width: 100%;
 	background: #3798D2;
-  	color: #ffffff;
-	padding: 4px 12px 4px 12px;
-	margin: 20px 0px;
+  	color: #3f3f3f;
+	background: #eDeDeD;
+	padding: 10px;
 }
 
 div.segment_header h2 {
 	padding: 0px;
 	margin: 0px;
+	cursor: default;
+}
+
+div.segment_item {
+	width: 95%;
+	border: 1px;
+  	border-style: solid;
+  	border-color: #AfAfAf;
+  	cursor: default;
+  	margin: auto;
+  	min-width: 340px;
+}
+
+div.segment_item_body {
+	width: 100%;
+}
+
+div.segment_item_left {
+	width: 20%;
+	float: left;
+	margin: 6px 0px;
+	vertical-align: middle;
+}
+
+div.segment_item_right {
+	width: 80%;
+	float: right;
+	margin: 6px 0px;
+	vertical-align: middle;
+}
+
+div.segment_body {
+	padding: 10px;
+}
+
+div.graph_plot {
+	border: 1px;
+  	border-style: solid;
+  	border-color: #AfAfAf;
+  	padding: 20px;
 }
 
 div.segment_list {
-	padding: 20px 0px;
   	color: #8f8f8f;
+  	margin: 20px;
+  	margin: 25px 0px;
+}
+
+div.clear {
+	clear: both;
+}
+
+button.delete_segment {
+	float: right;
+	width: 20px;
+	height: 20px;
+	background: #F3356B;
+	text-align: center;
+	padding: 0;
+	font-size: 13px;
+}
+
+button.delete_segment:hover {
+	background: #FB759B;
+}
+
+button.delete_segment:active {
+	background: #ffffff;
+	color: #FB759B;
 }
 

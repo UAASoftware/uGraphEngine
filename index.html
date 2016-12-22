@@ -4,6 +4,9 @@
 		<meta charset="utf-8">
 		<title>μGraphEngine - UAA Software</title>
 		<link rel="stylesheet" href="index.css">
+		<script src="jquery-3.1.1.slim.min.js"></script>
+		<script src="highcharts.js"></script>
+		<script src="regression.js"></script>
 		<script src="ugraph.js"></script>
 	</head>
 
@@ -12,31 +15,42 @@
 			<h1>μGraphEngine</h1>
 		</header>
 
-		<div class="container">
+		<br>
+		<div class="super_container">
+			<div class="container">
 
-			<!-- Input for ugraphcode -->
-			<form>
-				<input type="text" class="ugraphcode" placeholder="Enter μGraphCode here"><br>
-			</form><br>
+				<!-- Input for ugraphcode -->
+				<form>
+					<input type="text" class="ugraphcode" id='ugraphcode' placeholder="Enter μGraphCode here" onchange="readGraphCode()"><br>
+				</form><br>
 
-			<!-- Input data point -->
-			<form>
-				<textarea class='data_input' id='data_input' placeholder="Enter input data points here"></textarea>
-			</form>
-			<button value="clear" onclick="clearDataInput()">Clear</button>
-			<button value="update" onclick="updateDataInput()">Update</button><br>
+				<!-- Input data point -->
+				<form>
+					<textarea class='data_input' id='data_input' placeholder="Enter input data points here"></textarea>
+				</form>
+				<button value="clear" onclick="clearDataInput()">Clear</button>
+				<button value="update" onclick="updateDataInput()">Update</button><br>
 
-			<!-- Plot -->
-			<br><br>
-			<center>
-			<div id="graph_plot" style="width:90%; height:500px;"></div>
-			</center>
+				<!-- Segment configuration -->
+				<div class="segment_list" id="segment_list"></div>
+				<center>
+				<button class="add_segment" align="center" value="add_segment" onclick="addSegment()">&#10133; Add Segment &#10133;</button>
+				</center>
 
-			<!-- Segment configuration -->
-			<div class="segment_list" id="segment_list"></div>
-			<button value="clear" onclick="addSegment()">Add Segment</button>
+			</div>
+	        <div class='container_graph'>
+	        	<!-- Plot -->
+				<center>
+				<div class="graph_plot" id="graph_plot" style="height:600px;"></div>
+				</center>
+	        </div>
+	        <div class="clear"></div>
+	        <br><br><br><br>
+	        <center>
+	        	<p>&copy; 2016 UAA Software</p>
+	        </center>
+	    </div>
 
-		</div>
 	</body>
 
 </html>
