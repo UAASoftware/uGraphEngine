@@ -10,7 +10,7 @@ body {
 }
 
 body {
-	font-family: sans-serif;
+	font-family: "Lucida Grande","Lucida Sans Unicode",Arial,Helvetica,sans-serif;
 	background: #EEEEEE;
 	background-image: url("white_carbonfiber.png");
     background-repeat: repeat;
@@ -31,6 +31,7 @@ header h1 {
 }
 
 button {
+	font-family: "Lucida Grande","Lucida Sans Unicode",Arial,Helvetica,sans-serif;
 	border: 0px;
 	color: #ffffff;
 	font-size: 16px;
@@ -94,6 +95,7 @@ textarea.data_input {
 	margin: 0px 0px 5px 0px;
 	resize: vertical;
 	font-family: 'Consolas', monospace;
+	font-size: 14px;
 	background: #eDeDeD;
   	color: #000000;
   	border: 1px;
@@ -101,12 +103,20 @@ textarea.data_input {
   	border-color: #AfAfAf;
 }
 
-input {
+input, select {
 	background: #eDeDeD;
   	color: #000000;
   	border: 1px;
   	border-style: solid;
   	border-color: #AfAfAf;
+  	font-family: 'Consolas', monospace;
+	font-size: 14px;
+	padding: 3px;
+}
+
+option {
+	background-color: #eDeDeD;
+  	color: #000000;
 }
 
 input.segment {

@@ -33,7 +33,9 @@ function toFloat32(value) {
 };
 
 // ref: http://stackoverflow.com/questions/4414077/read-write-bytes-of-float-in-js
+// 1 -1 838860
 function fromFloat32(bytes) {
+
     var sign = (bytes & 0x80000000) ? -1 : 1;
     var exponent = ((bytes >> 23) & 0xFF) - 127;
     var significand = (bytes & ~(-1 << 23));
@@ -70,6 +72,32 @@ function writeGraphCodeInt(bv)
 function writeGraphCodeFloat(v)
 {
     return writeGraphCodeInt(toFloat32(v));
+}
+
+g_currentReadCursor = 0;
+function readGraphCodeHexStr(v)
+{
+    return readGraphCodeChar(v) + readGraphCodeChar(v);
+}
+function readGraphCodeHex(v)
+{
+    return parseInt(readGraphCodeHexStr(v), 16);
+}
+function readGraphCodeChar(v)
+{
+    if (g_currentReadCursor >= v.length) return "0";
+    return v[ g_currentReadCursor++ ];
+}
+function readGraphCodeInt(v)
+{
+    return ((parseInt(readGraphCodeHexStr(v), 16) & 0xFF) << 24) +
+           ((parseInt(readGraphCodeHexStr(v), 16) & 0xFF) << 16) +
+           ((parseInt(readGraphCodeHexStr(v), 16) & 0xFF) << 8 ) +
+           ((parseInt(readGraphCodeHexStr(v), 16) & 0xFF) << 0 );
+}
+function readGraphCodeFloat(v)
+{
+    return fromFloat32(readGraphCodeInt(v));
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -146,12 +174,15 @@ function changeSegmentType(list_object, i) {
 }
 function changeSegmentMinX(input_object, i) {
     g_segment_list[i].minX = parseFloat(input_object.value);
+    renderSegmentList();
 }
 function changeSegmentMaxX(input_object, i) {
     g_segment_list[i].maxX = parseFloat(input_object.value);
+    renderSegmentList();
 }
 function changeSegmentCoefficient(input_object, i, j) {
     g_segment_list[i].coeff[j] = parseFloat(input_object.value);
+    renderSegmentList();
 }
 
 function getSegmentPointsData(s)
@@ -177,13 +208,14 @@ function writeGraphCode()
 
         if (g_segment_list[i].type >= gtypes.LINEAR && g_segment_list[i].type <= gtypes.POLYNOMIAL_DEGREE_9) {
             var poly_deg = (g_segment_list[i].type - gtypes.LINEAR) + 1;
-            for (var j = 0; j < poly_deg; j++) {
+            for (var j = 0; j <= poly_deg; j++) {
                 code += writeGraphCodeFloat(g_segment_list[i].coeff[j]);
             }
         }
     }
     code += writeGraphCodeHex(0x8d);
     document.getElementById("ugraphcode").value = code;
+    document.getElementById("ugraphcode").style.backgroundColor = "#eDeDeD";
 }
 
 function readGraphCodeFailure()
@@ -200,9 +232,51 @@ function readGraphCode()
     if (code[0] != "d" || code[1] != "8") return readGraphCodeFailure();
     if (code[code.length - 1] != "d" || code[code.length - 2] != "8") return readGraphCodeFailure();
 
-    var n_segments = code[]
+    g_currentReadCursor = 0;
+    var magic = readGraphCodeHex(code);
+    if (magic != 0xd8) {
+        alert("Internal error while reading graph code.");
+        alert(magic);
+        return readGraphCodeFailure();
+    }
+
+    n_segments = readGraphCodeHex(code);
+    t_seglist = []
+
+    // Read in segment by segment.
+    for (var i = 0; i < n_segments; i++) {
+
+        var _type = readGraphCodeHex(code);
+        var _minX = readGraphCodeFloat(code);
+        var _maxX = readGraphCodeFloat(code);
+        var _coeff = [];
+        if (_type >= gtypes.LINEAR && _type <= gtypes.POLYNOMIAL_DEGREE_9) {
+            var poly_deg = (_type - gtypes.LINEAR) + 1;
+            for (var j = 0; j <= poly_deg; j++) {
+                _coeff.push(readGraphCodeFloat(code));
+            }
+        }
+        if (g_currentReadCursor >= code.length) {
+            alert("Read off end of array.");
+            return readGraphCodeFailure();
+        }
+
+        t_seglist.push({
+            type: _type,
+            minX: _minX,
+            maxX: _maxX,
+            coeff: _coeff
+        });
+    }
+
+    // Read in segment by segment.
+    g_segment_list = [];
+    for (var i = 0; i < n_segments; i++) {
+        g_segment_list.push(t_seglist[i]);
+    }
 
     document.getElementById("ugraphcode").style.backgroundColor = "#eDeDeD";
+    renderSegmentList();
     return 0;
 }
 
@@ -277,8 +351,26 @@ function evaluateGraph(x)
     return 0.0;
 }
 
+function getGraphFormulaStr(type)
+{
+    switch (type) {
+        case gtypes.LINEAR: return "y = a + bx";
+        case gtypes.QUADRATIC: return "y = a + bx + cx<sup>2</sup>";
+        case gtypes.CUBIC: return "y = a + bx + c<sup>2</sup> + dx<sup>3</sup>";
+        case gtypes.QUARTIC: return "y = a + bx + c<sup>2</sup> + dx<sup>3</sup> + ex<sup>4</sup>";
+        case gtypes.QUINTIC: return "y = a + bx + c<sup>2</sup> + dx<sup>3</sup> + ex<sup>4</sup> + fx<sup>5</sup>";
+        case gtypes.POLYNOMIAL_DEGREE_6: return "y = a + bx + c<sup>2</sup> + dx<sup>3</sup> + ex<sup>4</sup> + fx<sup>5</sup> + gx<sup>6</sup>";
+        case gtypes.POLYNOMIAL_DEGREE_7: return "y = a + bx + c<sup>2</sup> + dx<sup>3</sup> + ex<sup>4</sup> + fx<sup>5</sup> + gx<sup>6</sup> + hx<sup>7</sup>";
+        case gtypes.POLYNOMIAL_DEGREE_8: return "y = a + bx + c<sup>2</sup> + dx<sup>3</sup> + ex<sup>4</sup> + fx<sup>5</sup> + gx<sup>6</sup> + hx<sup>7</sup> + ix<sup>8</sup>";
+        case gtypes.POLYNOMIAL_DEGREE_9: return "y = a + bx + c<sup>2</sup> + dx<sup>3</sup> + ex<sup>4</sup> + fx<sup>5</sup> + gx<sup>6</sup> + hx<sup>7</sup> + ix<sup>8</sup> + jx<sup>9</sup> ";
+        default:
+            return "";
+    }
+}
+
 function renderSegmentList() {
     var segment_list_render = "";
+    writeGraphCode();
 
     // Re-render the segment list.
     for (i in g_segment_list) {
@@ -295,6 +387,7 @@ function renderSegmentList() {
         segment_list_render += "    <div class='segment_body'>\n";
 
         // Common editors.
+        segment_list_render += "            <center><p>" + getGraphFormulaStr(g_segment_list[i].type) + "</p></center>\n";
         segment_list_render += "            segment type: \n";
         segment_list_render += "            <select name='typelist' onchange='changeSegmentType(this, " + i + ")'>\n";
         for (j in type_names) {
@@ -359,7 +452,6 @@ function renderSegmentList() {
     if (g_points_curvefit.length > 0) {
         g_chart.series[1].setData(g_points_curvefit);
     }
-    writeGraphCode();
 }
 
 function addSegment() {
