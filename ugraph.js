@@ -6,8 +6,8 @@ function toFloat32(value) {
     switch (value) {
         case Number.POSITIVE_INFINITY: bytes = 0x7F800000; break;
         case Number.NEGATIVE_INFINITY: bytes = 0xFF800000; break;
-        case +0.0: bytes = 0x40000000; break;
-        case -0.0: bytes = 0xC0000000; break;
+        case +0.0: bytes = 0x00000000; break;
+        case -0.0: bytes = 0x80000000; break;
         default:
             if (Number.isNaN(value)) { bytes = 0x7FC00000; break; }
 

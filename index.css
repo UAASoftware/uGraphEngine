@@ -40,13 +40,25 @@ button {
 	text-decoration: none;
 }
 
-button:hover {
-	background: #0B6296;
+a {
+    font-weight: bold;
+    color: #0B6296;
+    text-decoration: none;
+}
+
+a:hover {
+    color: #0B6296;
+    text-decoration: underline;
+}
+
+a:active {
+	color: #000000;
+    text-decoration: underline;
 }
 
 button:active {
 	background: #ffffff;
-	color: #0B6296;
+	color: #3798D2;
 }
 
 button.add_segment {
