@@ -10,7 +10,7 @@ evaluation library written in C++. Curve fitting uese the regression-js library.
 
 ## Instructions
 
-Feel free to use the online version [here](https://uaasoftware.com/ugraph).
+Feel free to use the online version [here](http://uaasoftware.com/ugraph).
 Otherwise, feel free to hose a copy yourself by cloning this repo onto any old web server.
 To run locally, just open index.html with any non-ancient browser.
 
