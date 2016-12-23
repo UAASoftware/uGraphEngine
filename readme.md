@@ -21,7 +21,7 @@ For the C++ backend, ugraph.hpp provides a header only library. Example usage:
     assert(abs(u.eval(1.98f) - 9.275f) < 0.01f);
     assert(u.eval(4.313f) == 0.0f);
 }
-``
+```
 
 
 ## License
