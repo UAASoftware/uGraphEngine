@@ -46,7 +46,9 @@ class ugraph {
         UGRAPH_TYPE_POLYNOMIAL_DEGREE_7 = 6,
         UGRAPH_TYPE_POLYNOMIAL_DEGREE_8 = 7,
         UGRAPH_TYPE_POLYNOMIAL_DEGREE_9 = 8,
-        UGRAPH_TYPE_GRAPH_TYPE_MAX = 9
+        UGRAPH_TYPE_SIGMOIDAL = 9,
+        UGRAPH_TYPE_CONNECTOR = 10,
+        UGRAPH_TYPE_GRAPH_TYPE_MAX = 11
     };
 
     struct ugraph_segment {
@@ -82,6 +84,18 @@ protected:
     {
         uint32_t val = readGraphCodeInt(code, len, i);
         return (reinterpret_cast<const float*>(&val))[0];
+    }
+    inline uint32_t getNumCoefficients(uint8_t type)
+    {
+        int numCoeff = 0;
+        if (type >= UGRAPH_TYPE_LINEAR && type <= UGRAPH_TYPE_POLYNOMIAL_DEGREE_9) {
+            numCoeff = (type - UGRAPH_TYPE_LINEAR) + 1;
+        } else if (type == UGRAPH_TYPE_SIGMOIDAL) {
+            numCoeff = 3;
+        } else if (type == UGRAPH_TYPE_CONNECTOR) {
+            numCoeff = 1;
+        }
+        return numCoeff;
     }
 
 
@@ -130,9 +144,9 @@ public:
             m_segments[i].minX = readGraphCodeFloat(code, len, off); off += 8;
             m_segments[i].maxX = readGraphCodeFloat(code, len, off); off += 8;
             
-            if (m_segments[i].type >= UGRAPH_TYPE_LINEAR && m_segments[i].type <= UGRAPH_TYPE_POLYNOMIAL_DEGREE_9) {
-                int poly = (m_segments[i].type - UGRAPH_TYPE_LINEAR) + 1;
-                for (int j = 0; j <= poly; j++) {
+            if (m_segments[i].type >= UGRAPH_TYPE_LINEAR && m_segments[i].type < UGRAPH_TYPE_GRAPH_TYPE_MAX) {
+                int numc = getNumCoefficients(m_segments[i].type);
+                for (int j = 0; j <= numc; j++) {
                     m_segments[i].c[j] = readGraphCodeFloat(code, len, off); off += 8;
                 }
             } else {
