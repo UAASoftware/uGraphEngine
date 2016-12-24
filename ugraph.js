@@ -119,8 +119,23 @@ var gtypes = {
     POLYNOMIAL_DEGREE_7: 6,
     POLYNOMIAL_DEGREE_8: 7,
     POLYNOMIAL_DEGREE_9: 8,
-    GRAPH_TYPE_MAX: 9
+    SIGMOIDAL: 9,
+    CONNECTOR: 10,
+    GRAPH_TYPE_MAX: 11
 };
+
+function getCoeff(type)
+{
+    var num_coeff = 0;
+    if (type >= gtypes.LINEAR && type <= gtypes.POLYNOMIAL_DEGREE_9) {
+        num_coeff = (type - gtypes.LINEAR) + 1;
+    } else if (type == gtypes.SIGMOIDAL) {
+        num_coeff = 3;
+    } else if (type == gtypes.CONNECTOR) {
+        num_coeff = 1;
+    }
+    return num_coeff;
+}
 
 function clearDataInput() {
     document.getElementById("data_input").value = '';
@@ -161,6 +176,20 @@ function updateDataInput() {
     if (g_points_data.length > 0) {
         g_chart.series[0].setData(g_points_data);
         g_chart.series[1].setData(g_points_curvefit);
+    }
+}
+
+function splitDataInput() {
+    updateDataInput();
+    g_segment_list = [];
+    for (var i = 0; i < g_points_data.length; i++) {
+        if (i + 1 >= g_points_data.length) break;
+        addSegment();
+        g_segment_list[g_segment_list.length - 1].minX = g_points_data[i][0];
+        g_segment_list[g_segment_list.length - 1].maxX = g_points_data[i + 1][0];
+    }
+    for (var i = 0; i < g_segment_list.length; i++) {
+        curveFitSegment(i);
     }
 }
 
@@ -206,11 +235,9 @@ function writeGraphCode()
         code += writeGraphCodeFloat(g_segment_list[i].minX)
         code += writeGraphCodeFloat(g_segment_list[i].maxX)
 
-        if (g_segment_list[i].type >= gtypes.LINEAR && g_segment_list[i].type <= gtypes.POLYNOMIAL_DEGREE_9) {
-            var poly_deg = (g_segment_list[i].type - gtypes.LINEAR) + 1;
-            for (var j = 0; j <= poly_deg; j++) {
-                code += writeGraphCodeFloat(g_segment_list[i].coeff[j]);
-            }
+        var num_coeff = getCoeff(g_segment_list[i].type);
+        for (var j = 0; j <= num_coeff; j++) {
+            code += writeGraphCodeFloat(g_segment_list[i].coeff[j]);
         }
     }
     code += writeGraphCodeHex(0x8d);
@@ -250,11 +277,9 @@ function readGraphCode()
         var _minX = readGraphCodeFloat(code);
         var _maxX = readGraphCodeFloat(code);
         var _coeff = [];
-        if (_type >= gtypes.LINEAR && _type <= gtypes.POLYNOMIAL_DEGREE_9) {
-            var poly_deg = (_type - gtypes.LINEAR) + 1;
-            for (var j = 0; j <= poly_deg; j++) {
-                _coeff.push(readGraphCodeFloat(code));
-            }
+        var num_coeff = getCoeff(_type);
+        for (var j = 0; j <= num_coeff; j++) {
+            _coeff.push(readGraphCodeFloat(code));
         }
         if (g_currentReadCursor >= code.length) {
             alert("Read off end of array.");
@@ -282,17 +307,25 @@ function readGraphCode()
 
 function curveFitSegment(i) {
     updateDataInput();
-    var poly_deg = (g_segment_list[i].type - gtypes.LINEAR) + 1;
-    var segment_points_data = getSegmentPointsData(i);
 
-    if (segment_points_data.length <= 0) {
-        alert("Error while curve fitting - No data points in given range!");
-        return;
+    var segment_points_data = [];
+    if (g_segment_list[i].type == gtypes.CONNECTOR) {
+        // Connector fits to the two ends.
+        segment_points_data.push([ g_segment_list[i].minX, evaluateGraph(g_segment_list[i].minX, false) ]);
+        segment_points_data.push([ g_segment_list[i].maxX, evaluateGraph(g_segment_list[i].maxX, false) ]);
+    } else {
+        // General curve fitting fits to data points.
+        segment_points_data = getSegmentPointsData(i);
+        if (segment_points_data.length <= 0) {
+            alert("Error while curve fitting - No data points in given range!");
+            return;
+        }
     }
 
     // Perform regression curvefit on the segment.
-    if (g_segment_list[i].type >= gtypes.LINEAR && g_segment_list[i].type <= gtypes.POLYNOMIAL_DEGREE_9) {
-        var result = regression('polynomial', segment_points_data, poly_deg);
+    if ((g_segment_list[i].type >= gtypes.LINEAR && g_segment_list[i].type <= gtypes.POLYNOMIAL_DEGREE_9) || g_segment_list[i].type == gtypes.CONNECTOR) {
+        var num_coeff = getCoeff(g_segment_list[i].type);
+        var result = regression('polynomial', segment_points_data, num_coeff);
         for (j in result.equation) {
             if (isNaN(result.equation[j])) {
                 alert("Error while curve fitting - NaN recieved as coefficient!");
@@ -303,7 +336,7 @@ function curveFitSegment(i) {
             g_segment_list[i].coeff[j] = result.equation[j];
         }
     } else {
-        alert("Unknown segment type!");
+        alert("This segment type does not support curve fitting.");
     }
 
     renderSegmentList();
@@ -317,10 +350,11 @@ function renderSegmentValueInput(name, value, callbackName)
 
 }
 
-function evaluateGraph(x)
+function evaluateGraph(x, allow_connectors = true)
 {
     for (seg in g_segment_list) {
         if (x < g_segment_list[seg].minX || x > g_segment_list[seg].maxX) continue;
+        if (g_segment_list[seg].type == gtypes.CONNECTOR && !allow_connectors) continue;
 
         var a = g_segment_list[seg].coeff[0];
         var b = g_segment_list[seg].coeff[1];
@@ -343,6 +377,8 @@ function evaluateGraph(x)
             case gtypes.POLYNOMIAL_DEGREE_7: return a + b*x + c*x*x + d*x*x*x + e*x*x*x*x + f*x*x*x*x*x + g*x*x*x*x*x*x + h*x*x*x*x*x*x*x;
             case gtypes.POLYNOMIAL_DEGREE_8: return a + b*x + c*x*x + d*x*x*x + e*x*x*x*x + f*x*x*x*x*x + g*x*x*x*x*x*x + h*x*x*x*x*x*x*x + i*x*x*x*x*x*x*x*x;
             case gtypes.POLYNOMIAL_DEGREE_9: return a + b*x + c*x*x + d*x*x*x + e*x*x*x*x + f*x*x*x*x*x + g*x*x*x*x*x*x + h*x*x*x*x*x*x*x + i*x*x*x*x*x*x*x*x + j*x*x*x*x*x*x*x*x*x;
+            case gtypes.SIGMOIDAL: return d + (a - d) / (1.0 + Math.pow(x / c, b));
+            case gtypes.CONNECTOR: return a + b*x;
             default:
                 alert("Error: Unknown graph segment type!");
                 return 0.0;
@@ -363,6 +399,8 @@ function getGraphFormulaStr(type)
         case gtypes.POLYNOMIAL_DEGREE_7: return "y = a + bx + c<sup>2</sup> + dx<sup>3</sup> + ex<sup>4</sup> + fx<sup>5</sup> + gx<sup>6</sup> + hx<sup>7</sup>";
         case gtypes.POLYNOMIAL_DEGREE_8: return "y = a + bx + c<sup>2</sup> + dx<sup>3</sup> + ex<sup>4</sup> + fx<sup>5</sup> + gx<sup>6</sup> + hx<sup>7</sup> + ix<sup>8</sup>";
         case gtypes.POLYNOMIAL_DEGREE_9: return "y = a + bx + c<sup>2</sup> + dx<sup>3</sup> + ex<sup>4</sup> + fx<sup>5</sup> + gx<sup>6</sup> + hx<sup>7</sup> + ix<sup>8</sup> + jx<sup>9</sup> ";
+        case gtypes.SIGMOIDAL: return "y = d + (a - d) / (1.0 + (x / c)<sup>b</sup>)";
+        case gtypes.CONNECTOR: return "y = a + bx";
         default:
             return "";
     }
@@ -376,7 +414,7 @@ function renderSegmentList() {
     for (i in g_segment_list) {
         type_names = [
             "Linear", "Quadratic Polynomial", "Cubic Polynomial", "Quartic Polynomial", "Quintic Polynomial",
-            "6th Degree Polynomial", "7th Degree Polynomial", "8th Degree Polynomial", "9th Degree Polynomial"
+            "6th Degree Polynomial", "7th Degree Polynomial", "8th Degree Polynomial", "9th Degree Polynomial", "Sigmoidal", "Connector"
         ];
         segment_list_render += "<div class='segment_item'>\n";
         
@@ -398,15 +436,15 @@ function renderSegmentList() {
         segment_list_render += renderSegmentValueInput("minX", g_segment_list[i].minX, "changeSegmentMinX(this, " + i + ")");
         segment_list_render += renderSegmentValueInput("maxX", g_segment_list[i].maxX, "changeSegmentMaxX(this, " + i + ")");
 
+        coefficient_names = [
+            "a", "b", "c", "d", "e", "f", "g", "h", "i", "j"
+        ];
         // Coefficients for polynomials.
-        if (g_segment_list[i].type >= gtypes.LINEAR && g_segment_list[i].type <= gtypes.POLYNOMIAL_DEGREE_9) {
-            coefficient_names = [
-                "a", "b", "c", "d", "e", "f", "g", "h", "i", "j"
-            ];
-            for (j = 0; j <= (g_segment_list[i].type - gtypes.LINEAR) + 1; j++) {
-                segment_list_render += renderSegmentValueInput(coefficient_names[j], g_segment_list[i].coeff[j], "changeSegmentCoefficient(this, " + i + ", " + j +")");
-            }
+        var num_coeff = getCoeff(g_segment_list[i].type);
+        for (j = 0; j <= num_coeff; j++) {
+            segment_list_render += renderSegmentValueInput(coefficient_names[j], g_segment_list[i].coeff[j], "changeSegmentCoefficient(this, " + i + ", " + j +")");
         }
+
         segment_list_render += "            <center><button value='add_segment' onclick='curveFitSegment(" + i + ")'>Curve Fit</button></center>\n";
 
         segment_list_render += "    </div>\n";
@@ -438,9 +476,9 @@ function renderSegmentList() {
         return;
     }
 
-    // Evaluate the graph, taking 100 samples.
+    // Evaluate the graph, taking 200 samples.
     var rangeXGraph = maxXGraph - minXGraph;
-    for (var i = 0.0; i <= 1.0; i += 0.01) {
+    for (var i = 0.0; i <= 1.0; i += 0.005) {
         var x = minXGraph + i * rangeXGraph;
         var y = evaluateGraph(x);
         g_points_curvefit.push(
